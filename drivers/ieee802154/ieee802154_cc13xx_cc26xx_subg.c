@@ -224,7 +224,7 @@ static void cmd_prop_rx_adv_callback(RF_Handle h, RF_CmdHandle ch,
 	if (op->status == PROP_ERROR_RXBUF
 		|| op->status == PROP_ERROR_RXFULL
 		|| op->status == PROP_ERROR_RXOVF) {
-		LOG_DBG("RX Error %x", op->status);
+		LOG_ERR("RX Error %x", op->status);
 		/* Restart RX */
 		(void)ieee802154_cc13xx_cc26xx_subg_rx(dev);
 	}
@@ -294,7 +294,7 @@ static int ieee802154_cc13xx_cc26xx_subg_rx(const struct device *dev)
 				(RF_Op *)&drv_data->cmd_prop_rx_adv, RF_PriorityNormal,
 				cmd_prop_rx_adv_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
-		LOG_DBG("Failed to post RX command (%d)", cmd_handle);
+		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
 		return -EIO;
 	}
 
@@ -335,7 +335,7 @@ static int ieee802154_cc13xx_cc26xx_subg_set_channel(
 	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
 	if (reason != RF_EventLastCmdDone) {
-		LOG_DBG("Failed to set frequency: 0x%" PRIx64, reason);
+		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
 		r = -EIO;
 		goto out;
 	}
@@ -370,13 +370,13 @@ static int ieee802154_cc13xx_cc26xx_subg_set_txpower(
 		(RF_TxPowerTable_Entry *)txPowerTable_sub_ghz, dbm);
 
 	if (power_table_value.rawValue == RF_TxPowerTable_INVALID_VALUE) {
-		LOG_DBG("RF_TxPowerTable_findValue() failed");
+		LOG_ERR("RF_TxPowerTable_findValue() failed");
 		return -EINVAL;
 	}
 
 	status = RF_setTxPower(drv_data->rf_handle, power_table_value);
 	if (status != RF_StatSuccess) {
-		LOG_DBG("RF_setTxPower() failed: %d", status);
+		LOG_ERR("RF_setTxPower() failed: %d", status);
 		return -EIO;
 	}
 
@@ -438,7 +438,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 				   RF_PriorityNormal, cmd_prop_tx_adv_callback,
 				   RF_EventLastCmdDone);
 		if ((reason & RF_EventLastCmdDone) == 0) {
-			LOG_DBG("Failed to run command (%" PRIx64 ")", reason);
+			LOG_ERR("Failed to run command (%" PRIx64 ")", reason);
 			r = -EIO;
 			goto out;
 		}
@@ -457,7 +457,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 		}
 
 		if (drv_data->cmd_prop_tx_adv.status != PROP_DONE_OK) {
-			LOG_DBG("Transmit failed (0x%x)",
+			LOG_ERR("Transmit failed (0x%x)",
 				drv_data->cmd_prop_tx_adv.status);
 			continue;
 		}
@@ -468,7 +468,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 
 	} while (retry-- > 0);
 
-	LOG_DBG("Failed to TX");
+	LOG_ERR("Failed to TX");
 	r = -EIO;
 
 out:
@@ -522,12 +522,12 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 			pkt = net_pkt_rx_alloc_with_buffer(
 				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
 			if (!pkt) {
-				LOG_WRN("Cannot allocate packet");
+				LOG_ERR("Cannot allocate packet");
 				continue;
 			}
 
 			if (net_pkt_write(pkt, sdu, len)) {
-				LOG_WRN("Cannot write packet");
+				LOG_ERR("Cannot write packet");
 				net_pkt_unref(pkt);
 				continue;
 			}
@@ -570,7 +570,7 @@ static int ieee802154_cc13xx_cc26xx_subg_stop(const struct device *dev)
 		|| status == RF_StatSuccess
 		|| status == RF_StatRadioInactiveError
 		|| status == RF_StatInvalidParamsError)) {
-		LOG_DBG("Failed to abort radio operations (%d)", status);
+		LOG_ERR("Failed to abort radio operations (%d)", status);
 		return -EIO;
 	}
 
